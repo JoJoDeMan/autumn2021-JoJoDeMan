@@ -1,0 +1,236 @@
+---
+title: "Individual project"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(fastDummies)
+library(ggplot2)
+library(mice)
+library(naniar)
+library(texreg)
+library(rmarkdown)
+library(ggcorrplot)
+```
+
+## Dataset
+
+```{r}
+url <- "https://raw.githubusercontent.com/JoJoDeMan/autumn2021-JoJoDeMan/master/house%20price%20data.csv"
+df <- read.csv(url)
+view(df)
+
+```
+
+```{r}
+range(df$price)
+```
+
+```{r}
+head(df)
+summary(df)
+
+```
+
+## Cleaning data
+
+##removing missing values and 0 values in price
+
+```{r}
+df <- filter(df, price > 0)
+```
+
+```{r}
+df <- na.omit(df)
+```
+
+##Changing city names to numeric names
+
+```{r}
+df$city <- str_replace(df$city, 'Shoreline', '0')
+df$city <- str_replace(df$city, 'Seattle', '1')
+df$city <- str_replace(df$city, 'Kent', '2')
+df$city <- str_replace(df$city, 'Bellevue', '3')
+df$city <- str_replace(df$city, 'Algona', '4')
+df$city <- str_replace(df$city, 'Auburn', '5')
+df$city <- str_replace(df$city, 'Beaux Arts Village', '6')
+df$city <- str_replace(df$city, 'Black Diamond', '7')
+df$city <- str_replace(df$city, 'Bothell', '8')
+df$city <- str_replace(df$city, 'Burien', '9')
+df$city <- str_replace(df$city, 'Carnation', '10')
+df$city <- str_replace(df$city, 'Clyde Hill', '11')
+df$city <- str_replace(df$city, 'Covington', '12')
+df$city <- str_replace(df$city, 'Des Moines', '13')
+df$city <- str_replace(df$city, 'Duvall', '14')
+df$city <- str_replace(df$city, 'Enumclaw', '15')
+df$city <- str_replace(df$city, 'Fall City', '16')
+df$city <- str_replace(df$city, 'Federal Way', '17')
+df$city <- str_replace(df$city, 'Inglewood-Finn Hill', '18')
+df$city <- str_replace(df$city, 'Issaquah', '19')
+df$city <- str_replace(df$city, 'Kenmore', '20')
+df$city <- str_replace(df$city, 'Kirkland', '21')
+df$city <- str_replace(df$city, 'Lake Forest Park', '22')
+df$city <- str_replace(df$city, 'Maple Valley', '23')
+df$city <- str_replace(df$city, 'Medina', '24')
+df$city <- str_replace(df$city, 'Mercer Island', '25')
+df$city <- str_replace(df$city, 'Milton', '26')
+df$city <- str_replace(df$city, 'Newcastle', '27')
+df$city <- str_replace(df$city, 'Normandy Park', '28')
+df$city <- str_replace(df$city, 'North Bend', '29')
+df$city <- str_replace(df$city, 'Pacific', '30')
+df$city <- str_replace(df$city, 'Preston', '31')
+df$city <- str_replace(df$city, 'Ravensdale', '32')
+df$city <- str_replace(df$city, 'Redmond', '33')
+df$city <- str_replace(df$city, 'Renton', '34')
+df$city <- str_replace(df$city, 'Sammamish', '35')
+df$city <- str_replace(df$city, 'SeaTac', '36')
+df$city <- str_replace(df$city, 'Skykomish', '37')
+df$city <- str_replace(df$city, 'Snoqualmie', '38')
+df$city <- str_replace(df$city, 'Snoqualmie Pass', '39')
+df$city <- str_replace(df$city, 'Tukwila', '40')
+df$city <- str_replace(df$city, 'Vashon', '41')
+df$city <- str_replace(df$city, 'Woodinville', '42')
+df$city <- str_replace(df$city, 'Yarrow Point', '43')
+```
+
+##setting al variables to nummeric
+
+```{r}
+df$city <- as.numeric(df$city)
+table(df$city) 
+df$sqft_living <- as.numeric(df$sqft_living)
+df$sqft_lot <- as.numeric(df$sqft_lot)
+df$waterfront <- as.numeric(df$waterfront)
+df$view <- as.numeric(df$view)
+df$condition <- as.numeric(df$condition)
+df$sqft_above <- as.numeric(df$sqft_above)
+df$sqft_basement <- as.numeric(df$sqft_basement)
+df$yr_built <- as.numeric(df$yr_built)
+df$yr_renovated <- as.numeric(df$yr_renovated)
+
+sapply(df, class)
+```
+
+##Calculating the age of the houses
+
+```{r}
+df$agehouse <- as.integer(format(Sys.Date(), "%Y")) - df$yr_built
+
+drops <- c("yr_built")
+df = df[ , !(names(df) %in% drops)]
+```
+
+##Making clean dataframe
+
+```{r}
+cleandf <- df[,c("price","bedrooms","bathrooms","sqft_living","floors",
+                  "sqft_lot", "condition", "view", "agehouse","city")]
+head(cleandf)
+```
+
+##creating model
+
+```{r}
+model1 <- lm(price~bedrooms+bathrooms+floors+city+sqft_living+sqft_lot+view+condition+agehouse,
+              data=cleandf)
+summary(model1)
+```
+
+```{r}
+cor(cleandf)
+
+```
+
+##Making correlogram
+
+```{r}
+correlogram <- round(cor(cleandf), 1)
+
+ggcorrplot(correlogram,
+           type = "lower",
+           lab = TRUE, 
+           lab_size = 5,  
+           colors = c("red", "white", "green"),
+           title="Correlations between variables", 
+           ggtheme=theme_bw)
+```
+
+##Making clean correlogram without outliers
+
+```{r}
+cleancorrelogram <- round(cor(cleandf2), 1)
+
+ggcorrplot(cleancorrelogram,
+           type = "lower",
+           lab = TRUE, 
+           lab_size = 5,  
+           colors = c("red", "white", "green"),
+           title="Correlations between variables without outliers", 
+           ggtheme=theme_bw)
+```
+
+##Checking for outliers in price and sqft_living
+
+```{r}
+par(mfrow=c(1, 2))  
+
+boxplot(cleandf$price, main="price")
+boxplot(cleandf$sqft_living, main="sqft_living")
+```
+
+##removing the outliers using CooksD
+
+```{r}
+
+CooksD <- cooks.distance(model1)
+n <- nrow(cleandf)
+
+names(CooksD)[(CooksD > (4/n))] 
+
+Outliers <- as.numeric(names(CooksD)[(CooksD > (4/n))])
+
+cleandf[Outliers,]
+
+cleandf2 <- cleandf[-Outliers,]
+```
+
+##Creating new model without the outliers
+
+```{r}
+model1b <- lm(price~bedrooms+bathrooms+floors+city+sqft_living+sqft_lot+view+condition+agehouse,
+              data=cleandf2)
+summary(model1b)
+```
+
+## Deployment
+
+##Scatterplot with outliers
+
+```{r}
+ggplot(df, aes(x=sqft_living, y=price))+geom_point()+geom_smooth(formula = y ~ x, method = loess)
+```
+
+##Scatterplot without outliers
+
+```{r}
+ggplot(cleandf2, aes(x=sqft_living, y=price))+geom_point()+geom_smooth(formula = y ~ x, method = loess)
+```
+
+##Scatterplot without outliers (this is another way of using a ggplot without the outliers)
+
+```{r}
+ggplot(cleandf2,aes(y=price,x=sqft_living)) +
+       geom_point() + 
+        xlim(0, 9000) +
+        ylim(0, 3000000) +
+        geom_smooth(formula = y ~ x,method="lm")
+```
+
+##exporting models to word
+
+```{r}
+wordreg(list(model1, model1b), file = "Models.doc")
+```
